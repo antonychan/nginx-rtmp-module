@@ -597,7 +597,7 @@ ngx_rtmp_hls_write_playlist(ngx_rtmp_session_t *s)
 
         if (hacf->keys && (i == 0 || f->key_id != prev_key_id)) {
             p = ngx_slprintf(p, end, "#EXT-X-KEY:METHOD=AES-128,"
-                             "URI=\"%V%V%s%s%uL.key\",IV=0x%032XL\n",
+                             "URI=\"%V%V%s/%s%uL.key\",IV=0x%032XL\n",
                              &hacf->key_url, &key_name_part, base64Buffer,
                              key_sep, f->key_id, f->key_id);
         }
