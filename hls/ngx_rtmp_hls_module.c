@@ -19,6 +19,9 @@
 
 #include "ngx_rtmp_mpegts.h"
 
+#define CEILING_POS(X) ((X-(int)(X)) > 0 ? (int)(X+1) : (int)(X))
+#define CEILING_NEG(X) ((X-(int)(X)) < 0 ? (int)(X-1) : (int)(X))
+#define CEILING(X) ( ((X) > 0) ? CEILING_POS(X) : CEILING_NEG(X) )
 
 static ngx_rtmp_publish_pt              next_publish;
 static ngx_rtmp_close_stream_pt         next_close_stream;
@@ -2481,7 +2484,7 @@ char* base64Encode(const unsigned char *message, const size_t length) {
     BIO *b64;
     FILE* stream;
 
-    int encodedSize = 4*ceil((double)length/3);
+    int encodedSize = 4*CEILING((double)length/3);
     char *buffer = (char*)malloc(encodedSize+1);
     if(buffer == NULL) {
         fprintf(stderr, "Failed to allocate memory\n");
