@@ -25,6 +25,7 @@ static ngx_rtmp_close_stream_pt         next_close_stream;
 static ngx_rtmp_stream_begin_pt         next_stream_begin;
 static ngx_rtmp_stream_eof_pt           next_stream_eof;
 
+char *base64Encode(const unsigned char *input, size_t length);
 
 static char * ngx_rtmp_hls_variant(ngx_conf_t *cf, ngx_command_t *cmd,
        void *conf);
@@ -512,6 +513,15 @@ ngx_rtmp_hls_write_playlist(ngx_rtmp_session_t *s)
     memcpy(iv_enc, iv, AES_BLOCK_SIZE);
     AES_set_encrypt_key(key, AES_KEY_LENGTH * 8, &(encryption_key));
 
+    char message[] = "Jinju! Attack at dawn! Attack.";
+
+    unsigned char * encryption_output = (unsigned char *)malloc(32*sizeof(char));
+    AES_cbc_encrypt((unsigned char *) message, encryption_output, sizeof(message), &encryption_key, iv_enc, AES_ENCRYPT);
+    //printf("Encrypted: %s\n", encryption_output);
+
+    char *base64Buffer = base64Encode(encryption_output, strlen(encryption_output));
+    //printf("Base64 encoded: %s\n", base64Buffer);
+
     hacf = ngx_rtmp_get_module_app_conf(s, ngx_rtmp_hls_module);
     ctx = ngx_rtmp_get_module_ctx(s, ngx_rtmp_hls_module);
 
@@ -584,8 +594,8 @@ ngx_rtmp_hls_write_playlist(ngx_rtmp_session_t *s)
 
         if (hacf->keys && (i == 0 || f->key_id != prev_key_id)) {
             p = ngx_slprintf(p, end, "#EXT-X-KEY:METHOD=AES-128,"
-                             "URI=\"%V%V%s%uL.key\",IV=0x%032XL\n",
-                             &hacf->key_url, &key_name_part,
+                             "URI=\"%V%V%s%s%uL.key\",IV=0x%032XL\n",
+                             &hacf->key_url, &key_name_part, base64Buffer,
                              key_sep, f->key_id, f->key_id);
         }
 
@@ -2464,4 +2474,29 @@ ngx_rtmp_hls_postconfiguration(ngx_conf_t *cf)
     ngx_rtmp_stream_eof = ngx_rtmp_hls_stream_eof;
 
     return NGX_OK;
+}
+
+char* base64Encode(const unsigned char *message, const size_t length) {
+    BIO *bio;
+    BIO *b64;
+    FILE* stream;
+
+    int encodedSize = 4*ceil((double)length/3);
+    char *buffer = (char*)malloc(encodedSize+1);
+    if(buffer == NULL) {
+        fprintf(stderr, "Failed to allocate memory\n");
+        exit(1);
+    }
+
+    stream = fmemopen(buffer, encodedSize+1, "w");
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_new_fp(stream, BIO_NOCLOSE);
+    bio = BIO_push(b64, bio);
+    BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
+    BIO_write(bio, message, length);
+    (void)BIO_flush(bio);
+    BIO_free_all(bio);
+    fclose(stream);
+
+    return buffer;
 }
