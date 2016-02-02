@@ -9,6 +9,14 @@
 #include <ngx_rtmp.h>
 #include <ngx_rtmp_cmd_module.h>
 #include <ngx_rtmp_codec_module.h>
+#include <openssl/aes.h>
+#include <openssl/sha.h>
+#include <openssl/hmac.h>
+#include <openssl/evp.h>
+#include <openssl/bio.h>
+#include <openssl/buffer.h>
+#include <math.h>
+
 #include "ngx_rtmp_mpegts.h"
 
 
@@ -494,6 +502,14 @@ ngx_rtmp_hls_write_playlist(ngx_rtmp_session_t *s)
     uint64_t                        prev_key_id;
     const char                     *sep, *key_sep;
 
+    AES_KEY encryption_key;
+
+    unsigned char key[AES_KEY_LENGTH] = {'t', 'e', 's', 't', 't', 'e', 's', 't', 't', 'e', 's', 't', 't', 'e', 's', 't', 't', 'e', 's', 't', 't', 'e', 's', 't', 't', 'e', 's', 't', 't', 'e', 's', 't'};
+    unsigned char iv[AES_BLOCK_SIZE] = {'t', 'e', 's', 't', 't', 'e', 's', 't', 't', 'e', 's', 't', 't', 'e', 's', 't'};
+    unsigned char iv_enc[AES_BLOCK_SIZE];
+
+    memcpy(iv_enc, iv, AES_BLOCK_SIZE);
+    AES_set_encrypt_key(key, AES_KEY_LENGTH * 8, &(encryption_key));
 
     hacf = ngx_rtmp_get_module_app_conf(s, ngx_rtmp_hls_module);
     ctx = ngx_rtmp_get_module_ctx(s, ngx_rtmp_hls_module);
@@ -567,7 +583,7 @@ ngx_rtmp_hls_write_playlist(ngx_rtmp_session_t *s)
 
         if (hacf->keys && (i == 0 || f->key_id != prev_key_id)) {
             p = ngx_slprintf(p, end, "#EXT-X-KEY:METHOD=AES-128,"
-                             "URI=\"%V%V%s%uL.keyz\",IV=0x%032XL\n",
+                             "URI=\"%V%V%s%uL.key\",IV=0x%032XL\n",
                              &hacf->key_url, &key_name_part,
                              key_sep, f->key_id, f->key_id);
         }
