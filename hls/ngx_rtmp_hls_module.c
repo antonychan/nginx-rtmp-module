@@ -519,7 +519,7 @@ ngx_rtmp_hls_write_playlist(ngx_rtmp_session_t *s)
     AES_cbc_encrypt((unsigned char *) message, encryption_output, sizeof(message), &encryption_key, iv_enc, AES_ENCRYPT);
     //printf("Encrypted: %s\n", encryption_output);
 
-    char *base64Buffer = base64Encode((const char *)encryption_output, strlen((const char *)encryption_output));
+    char *base64Buffer = base64Encode(encryption_output, strlen((const char *)encryption_output));
     //printf("Base64 encoded: %s\n", base64Buffer);
 
     hacf = ngx_rtmp_get_module_app_conf(s, ngx_rtmp_hls_module);
